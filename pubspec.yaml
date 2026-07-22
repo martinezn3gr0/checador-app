@@ -33,7 +33,7 @@ dependencies:
   # UI/UX
   flutter_localizations:
     sdk: flutter
-  intl: ^0.19.0
+  intl: ^0.20.2
   cached_network_image: ^3.3.0
   animations: ^2.0.0
   shimmer: ^3.0.0
