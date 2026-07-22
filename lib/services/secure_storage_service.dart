@@ -39,15 +39,20 @@ class SecureStorageService {
     }
   }
 
-  Future<void> saveAppSession(AppSession session) {
-    return saveSession(
+  Future<void> saveAppSession(AppSession session) async {
+    await saveSession(
       userId: session.userId,
       userCode: session.userCode,
       accessToken: session.accessToken,
       userRole: session.role.value,
-    ).then((_) {
-      return _storage.write(key: _keyCompanyId, value: session.companyId);
-    });
+    );
+
+    if (session.companyId == null) {
+      await _storage.delete(key: _keyCompanyId);
+      return;
+    }
+
+    await _storage.write(key: _keyCompanyId, value: session.companyId);
   }
 
   Future<AppSession?> getSession() async {

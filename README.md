@@ -36,6 +36,8 @@ lib/
 
 ## Ejecución local
 
+Requiere Flutter 3.27 o superior.
+
 ```bash
 flutter pub get
 flutter run \

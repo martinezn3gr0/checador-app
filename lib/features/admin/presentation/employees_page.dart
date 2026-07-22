@@ -139,7 +139,7 @@ class _EmployeesPageState extends ConsumerState<EmployeesPage> {
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(context).bottom,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
             left: 20,
             right: 20,
             top: 20,
