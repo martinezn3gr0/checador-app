@@ -4,13 +4,13 @@ import 'package:shimmer/shimmer.dart';
 class LoadingWidget extends StatelessWidget {
   final String? message;
   final bool useShimmer;
-  
+
   const LoadingWidget({
-    Key? key,
+    super.key,
     this.message,
     this.useShimmer = false,
-  }) : super(key: key);
-  
+  });
+
   @override
   Widget build(BuildContext context) {
     if (useShimmer) {
@@ -34,7 +34,7 @@ class LoadingWidget extends StatelessWidget {
         ),
       );
     }
-    
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
