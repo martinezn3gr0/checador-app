@@ -12,7 +12,7 @@ Future<void> main() async {
   if (AppConfig.hasSupabaseConfig) {
     await Supabase.initialize(
       url: AppConfig.supabaseUrl,
-      anonKey: AppConfig.supabaseAnonKey,
+      publishableKey: AppConfig.supabaseAnonKey,
     );
   } else {
     AppLogger.warning(

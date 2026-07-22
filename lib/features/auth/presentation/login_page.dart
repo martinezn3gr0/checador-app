@@ -18,9 +18,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _companyCodeController = TextEditingController();
   final _userCodeController = TextEditingController();
   final _pinController = TextEditingController();
-  UserRole _role = AppConfig.flavor == AppFlavor.admin
-      ? UserRole.admin
-      : UserRole.employee;
+  UserRole _role =
+      AppConfig.flavor == AppFlavor.admin ? UserRole.admin : UserRole.employee;
 
   @override
   void dispose() {

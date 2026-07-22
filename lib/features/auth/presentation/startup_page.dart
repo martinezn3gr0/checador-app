@@ -35,7 +35,8 @@ class StartupPage extends ConsumerWidget {
     return Scaffold(
       body: session.when(
         data: (_) => const LoadingWidget(message: 'Preparando sesión...'),
-        loading: () => const LoadingWidget(message: 'Validando sesión segura...'),
+        loading: () =>
+            const LoadingWidget(message: 'Validando sesión segura...'),
         error: (error, _) => ErrorDisplayWidget(
           message: error.toString(),
           onRetry: () => ref.read(currentSessionProvider.notifier).restore(),

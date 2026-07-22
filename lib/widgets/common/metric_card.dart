@@ -32,7 +32,7 @@ class MetricCard extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: color.withOpacity(0.12),
+                    backgroundColor: color.withValues(alpha: 0.12),
                     foregroundColor: color,
                     child: Icon(icon),
                   ),

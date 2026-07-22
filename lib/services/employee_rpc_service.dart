@@ -120,10 +120,7 @@ class EmployeeRpcService {
     }
 
     if (response is List) {
-      return response
-          .whereType<Map>()
-          .map(Map<String, dynamic>.from)
-          .toList();
+      return response.whereType<Map>().map(Map<String, dynamic>.from).toList();
     }
 
     if (response is Map) {

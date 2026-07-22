@@ -9,11 +9,11 @@ class SecureStorageService {
   static const String _keyUserRole = 'user_role';
   static const String _keyCompanyId = 'company_id';
   static const String _keyCreatedAt = 'session_created_at';
-  
+
   final FlutterSecureStorage _storage;
-  
+
   SecureStorageService(this._storage);
-  
+
   /// Guarda las credenciales de sesión.
   Future<void> saveSession({
     required String userId,
@@ -91,7 +91,7 @@ class SecureStorageService {
       return null;
     }
   }
-  
+
   /// Obtiene el ID del usuario guardado
   Future<String?> getUserId() async {
     try {
@@ -101,7 +101,7 @@ class SecureStorageService {
       return null;
     }
   }
-  
+
   /// Obtiene el código del usuario guardado
   Future<String?> getUserCode() async {
     try {
@@ -111,7 +111,7 @@ class SecureStorageService {
       return null;
     }
   }
-  
+
   /// Obtiene el token de acceso guardado
   Future<String?> getAccessToken() async {
     try {
@@ -121,7 +121,7 @@ class SecureStorageService {
       return null;
     }
   }
-  
+
   /// Obtiene el rol del usuario guardado
   Future<String?> getUserRole() async {
     try {
@@ -131,7 +131,7 @@ class SecureStorageService {
       return null;
     }
   }
-  
+
   /// Verifica si existe sesión guardada
   Future<bool> hasSession() async {
     try {
@@ -142,7 +142,7 @@ class SecureStorageService {
       return false;
     }
   }
-  
+
   /// Limpia la sesión guardada
   Future<void> clearSession() async {
     try {

@@ -57,9 +57,8 @@ class _CheckInPageState extends ConsumerState<CheckInPage> {
         ),
         const SizedBox(height: 24),
         FilledButton.icon(
-          onPressed: _isSubmitting
-              ? null
-              : () => _registerCheck(ChecadaType.entrada),
+          onPressed:
+              _isSubmitting ? null : () => _registerCheck(ChecadaType.entrada),
           icon: const Icon(Icons.login),
           label: const Text('Registrar entrada'),
         ),
@@ -77,7 +76,8 @@ class _CheckInPageState extends ConsumerState<CheckInPage> {
   Future<void> _registerCheck(ChecadaType type) async {
     setState(() => _isSubmitting = true);
     try {
-      final position = await ref.read(locationServiceProvider).getCurrentPosition();
+      final position =
+          await ref.read(locationServiceProvider).getCurrentPosition();
       final checada = await ref.read(attendanceServiceProvider).registerCheck(
             employeeId: widget.session.userId,
             type: type,

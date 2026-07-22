@@ -175,8 +175,10 @@ class _EmployeesPageState extends ConsumerState<EmployeesPage> {
                 ),
                 const SizedBox(height: 20),
                 FilledButton(
-                  onPressed: _isCreating ? null : () => _createEmployee(companyId),
-                  child: Text(_isCreating ? 'Guardando...' : 'Guardar empleado'),
+                  onPressed:
+                      _isCreating ? null : () => _createEmployee(companyId),
+                  child:
+                      Text(_isCreating ? 'Guardando...' : 'Guardar empleado'),
                 ),
                 const SizedBox(height: 20),
               ],

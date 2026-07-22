@@ -41,10 +41,10 @@ class ObrasPage extends StatelessWidget {
                     'círculo de 100m y guardar con RPC admin_upsert_obra.',
                   ),
                   const SizedBox(height: 16),
-                  Wrap(
+                  const Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: const [
+                    children: [
                       Chip(label: Text('Radio: 100m')),
                       Chip(label: Text('Permisos foreground')),
                       Chip(label: Text('Haversine en backend')),

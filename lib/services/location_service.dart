@@ -4,7 +4,8 @@ class LocationService {
   Future<Position> getCurrentPosition() async {
     final hasPermission = await _ensurePermission();
     if (!hasPermission) {
-      throw StateError('Location permission is required to register attendance.');
+      throw StateError(
+          'Location permission is required to register attendance.');
     }
 
     return Geolocator.getCurrentPosition(

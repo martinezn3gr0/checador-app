@@ -19,7 +19,7 @@ class Checada {
   final bool biometricVerified;
   final String? notes;
   final DateTime createdAt;
-  
+
   const Checada({
     required this.id,
     required this.employeeId,
