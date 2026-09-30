@@ -5,9 +5,10 @@ Flutter app (employee multi-company attendance system, intended to use Supabase)
 ## Cursor Cloud specific instructions
 
 ### Environment
-- Flutter **stable** (3.44.x) is installed at `~/flutter` and is on `PATH` via `~/.bashrc` (also exports `CHROME_EXECUTABLE`). It is baked into the VM snapshot — do NOT reinstall Flutter. The startup update script only runs `flutter pub get`.
+- Flutter **stable** (3.47.x) is installed at `~/flutter` and is on `PATH` via `~/.bashrc` (also exports `CHROME_EXECUTABLE`). It is baked into the VM snapshot — do NOT reinstall Flutter. The startup update script only runs `flutter pub get`.
 - Linux desktop build deps (`ninja-build`, `libgtk-3-dev`, `mesa-utils`, `clang`, `cmake`, `pkg-config`) are installed, so `flutter build linux` works. Web is enabled (`flutter config --enable-web`).
 - Android SDK is intentionally NOT installed (Android is optional here); `flutter doctor` will flag it — that is expected, not a problem.
+- Optional secrets already supported by the app/config patterns: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (and service role when needed). On `main`, the check-in UI works without them (local in-memory records).
 
 ### Commands (run from repo root)
 - Install deps: `flutter pub get`
