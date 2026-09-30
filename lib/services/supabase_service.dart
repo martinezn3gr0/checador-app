@@ -5,11 +5,10 @@ import '../models/checada_model.dart';
 import '../models/entities.dart';
 import '../utils/logger.dart';
 
-/// Data layer over the real Supabase schema (Spanish columns + UUIDs).
+/// Production data layer over Supabase RPCs (PIN hashes never leave the DB).
 ///
 /// Tables: empresas, empleados, administradores, obras, empleado_obras, checadas.
-/// When Supabase is not configured the methods return null/empty so the UI can
-/// fall back to a local demo experience.
+/// When Supabase is not configured, methods return null/empty so UI can use demo mode.
 class SupabaseService {
   SupabaseService._();
   static final SupabaseService instance = SupabaseService._();
@@ -25,6 +24,7 @@ class SupabaseService {
     try {
       await Supabase.initialize(
         url: AppConfig.supabaseUrl,
+        // Legacy anon JWT still accepted; prefer publishable when available.
         anonKey: AppConfig.supabaseAnonKey,
       );
       instance._ready = true;
@@ -36,17 +36,6 @@ class SupabaseService {
 
   SupabaseClient get _c => Supabase.instance.client;
 
-  Future<Empresa?> _empresaByCodigo(String codigo) async {
-    final row = await _c
-        .from('empresas')
-        .select()
-        .eq('codigo', codigo)
-        .eq('activa', true)
-        .maybeSingle();
-    return row == null ? null : Empresa.fromRow(row);
-  }
-
-  /// Employee login by empresa code + employee code + pin.
   Future<Empleado?> loginEmpleado({
     required String empresaCodigo,
     required String empleadoCodigo,
@@ -54,24 +43,25 @@ class SupabaseService {
   }) async {
     if (!isConnected) return null;
     try {
-      final empresa = await _empresaByCodigo(empresaCodigo);
-      if (empresa == null) return null;
-      final row = await _c
-          .from('empleados')
-          .select()
-          .eq('empresa_id', empresa.id)
-          .eq('codigo', empleadoCodigo)
-          .eq('pin', pin)
-          .eq('activo', true)
-          .maybeSingle();
-      return row == null ? null : Empleado.fromRow(row, empresa);
+      final res = await _c.rpc('login_empleado', params: {
+        'p_empresa_codigo': empresaCodigo,
+        'p_empleado_codigo': empleadoCodigo,
+        'p_pin': pin,
+      });
+      if (res == null) return null;
+      final map = Map<String, dynamic>.from(res as Map);
+      final empresa =
+          Empresa.fromRow(Map<String, dynamic>.from(map['empresa'] as Map));
+      return Empleado.fromRow(
+        Map<String, dynamic>.from(map['empleado'] as Map),
+        empresa,
+      );
     } catch (e, s) {
       AppLogger.error('loginEmpleado failed', e, s);
       rethrow;
     }
   }
 
-  /// Admin login by empresa code + usuario + pin.
   Future<AdminSession?> loginAdmin({
     required String empresaCodigo,
     required String usuario,
@@ -79,43 +69,34 @@ class SupabaseService {
   }) async {
     if (!isConnected) return null;
     try {
-      final empresa = await _empresaByCodigo(empresaCodigo);
-      if (empresa == null) return null;
-      final row = await _c
-          .from('administradores')
-          .select()
-          .eq('empresa_id', empresa.id)
-          .eq('usuario', usuario)
-          .eq('pin', pin)
-          .eq('activo', true)
-          .maybeSingle();
-      return row == null ? null : AdminSession.fromRow(row, empresa);
+      final res = await _c.rpc('login_admin', params: {
+        'p_empresa_codigo': empresaCodigo,
+        'p_usuario': usuario,
+        'p_pin': pin,
+      });
+      if (res == null) return null;
+      final map = Map<String, dynamic>.from(res as Map);
+      final empresa =
+          Empresa.fromRow(Map<String, dynamic>.from(map['empresa'] as Map));
+      return AdminSession.fromRow(
+        Map<String, dynamic>.from(map['admin'] as Map),
+        empresa,
+      );
     } catch (e, s) {
       AppLogger.error('loginAdmin failed', e, s);
       rethrow;
     }
   }
 
-  /// The obra assigned to an employee (via empleado_obras), else first obra.
   Future<Obra?> obraForEmpleado(String empleadoId, String empresaId) async {
     if (!isConnected) return null;
     try {
-      final link = await _c
-          .from('empleado_obras')
-          .select('obra_id, obras(*)')
-          .eq('empleado_id', empleadoId)
-          .maybeSingle();
-      if (link != null && link['obras'] != null) {
-        return Obra.fromRow(Map<String, dynamic>.from(link['obras']));
-      }
-      final first = await _c
-          .from('obras')
-          .select()
-          .eq('empresa_id', empresaId)
-          .eq('activa', true)
-          .limit(1)
-          .maybeSingle();
-      return first == null ? null : Obra.fromRow(first);
+      final res = await _c.rpc('obra_for_empleado', params: {
+        'p_empleado_id': empleadoId,
+        'p_empresa_id': empresaId,
+      });
+      if (res == null) return null;
+      return Obra.fromRow(Map<String, dynamic>.from(res as Map));
     } catch (e, s) {
       AppLogger.error('obraForEmpleado failed', e, s);
       return null;
@@ -125,13 +106,14 @@ class SupabaseService {
   Future<List<Checada>> checadasByEmpleado(String empleadoId) async {
     if (!isConnected) return [];
     try {
-      final rows = await _c
-          .from('checadas')
-          .select()
-          .eq('empleado_id', empleadoId)
-          .order('registrado_at', ascending: false)
-          .limit(30);
-      return rows.map<Checada>(_checadaFromRow).toList();
+      final rows = await _c.rpc('list_checadas_empleado', params: {
+        'p_empleado_id': empleadoId,
+        'p_limit': 40,
+      });
+      if (rows is! List) return [];
+      return rows
+          .map((r) => _checadaFromRow(Map<String, dynamic>.from(r as Map)))
+          .toList();
     } catch (e, s) {
       AppLogger.error('checadasByEmpleado failed', e, s);
       return [];
@@ -144,72 +126,43 @@ class SupabaseService {
     required CheckadaType tipo,
     double? lat,
     double? lng,
+    double? distanceMeters,
   }) async {
     if (!isConnected) return null;
     try {
-      final now = DateTime.now();
-      final rows = await _c.from('checadas').insert({
-        'empleado_id': empleadoId,
-        'obra_id': obraId,
-        'tipo': tipo.name,
-        'registrado_at': now.toIso8601String(),
-        'FECHA': now.toIso8601String().substring(0, 10),
-        'lat': lat,
-        'lng': lng,
-      }).select();
-      if (rows.isEmpty) return null;
-      return _checadaFromRow(rows.first);
+      final res = await _c.rpc('register_checada', params: {
+        'p_empleado_id': empleadoId,
+        'p_obra_id': obraId,
+        'p_tipo': tipo.name,
+        'p_lat': lat,
+        'p_lng': lng,
+        'p_distancia_metros': distanceMeters,
+      });
+      if (res == null) return null;
+      return _checadaFromRow(Map<String, dynamic>.from(res as Map));
     } catch (e, s) {
       AppLogger.error('registerChecada failed', e, s);
       rethrow;
     }
   }
 
-  /// Aggregated dashboard metrics for an empresa.
   Future<DashboardData?> dashboard(String empresaId) async {
     if (!isConnected) return null;
     try {
-      final empleados = await _c
-          .from('empleados')
-          .select('id')
-          .eq('empresa_id', empresaId)
-          .eq('activo', true);
-      final ids = empleados.map((e) => '${e['id']}').toList();
-
-      final obras = await _c
-          .from('obras')
-          .select('id')
-          .eq('empresa_id', empresaId)
-          .eq('activa', true);
-
-      final today = DateTime.now();
-      final start = DateTime(today.year, today.month, today.day)
-          .toUtc()
-          .toIso8601String();
-
-      List<Map<String, dynamic>> checadasHoy = [];
-      if (ids.isNotEmpty) {
-        checadasHoy = List<Map<String, dynamic>>.from(await _c
-            .from('checadas')
-            .select('empleado_id, tipo, registrado_at')
-            .inFilter('empleado_id', ids)
-            .gte('registrado_at', start));
-      }
-
-      final entradas =
-          checadasHoy.where((c) => c['tipo'] == 'entrada').length;
-      final salidas = checadasHoy.where((c) => c['tipo'] == 'salida').length;
-      final presentesSet =
-          checadasHoy.map((c) => '${c['empleado_id']}').toSet();
-
+      final res = await _c.rpc(
+        'dashboard_empresa',
+        params: {'p_empresa_id': empresaId},
+      );
+      if (res == null) return null;
+      final m = Map<String, dynamic>.from(res as Map);
       return DashboardData(
-        empleados: ids.length,
-        entradas: entradas,
-        salidas: salidas,
-        obrasActivas: obras.length,
-        presentes: presentesSet.length,
-        faltas: ids.length - presentesSet.length,
-        checadasHoy: checadasHoy.length,
+        empleados: (m['empleados'] as num?)?.toInt() ?? 0,
+        entradas: (m['entradas'] as num?)?.toInt() ?? 0,
+        salidas: (m['salidas'] as num?)?.toInt() ?? 0,
+        obrasActivas: (m['obras_activas'] as num?)?.toInt() ?? 0,
+        presentes: (m['presentes'] as num?)?.toInt() ?? 0,
+        faltas: (m['faltas'] as num?)?.toInt() ?? 0,
+        checadasHoy: (m['checadas_hoy'] as num?)?.toInt() ?? 0,
       );
     } catch (e, s) {
       AppLogger.error('dashboard failed', e, s);
@@ -217,33 +170,19 @@ class SupabaseService {
     }
   }
 
-  /// Employees without any checada today (faltas).
   Future<List<Empleado>> faltasHoy(Empresa empresa) async {
     if (!isConnected) return [];
     try {
-      final empleadosRows = await _c
-          .from('empleados')
-          .select()
-          .eq('empresa_id', empresa.id)
-          .eq('activo', true);
-      final ids = empleadosRows.map((e) => '${e['id']}').toList();
-      if (ids.isEmpty) return [];
-
-      final today = DateTime.now();
-      final start = DateTime(today.year, today.month, today.day)
-          .toUtc()
-          .toIso8601String();
-      final checadasHoy = await _c
-          .from('checadas')
-          .select('empleado_id')
-          .inFilter('empleado_id', ids)
-          .gte('registrado_at', start);
-      final presentes =
-          checadasHoy.map((c) => '${c['empleado_id']}').toSet();
-
-      return empleadosRows
-          .where((e) => !presentes.contains('${e['id']}'))
-          .map((e) => Empleado.fromRow(e, empresa))
+      final rows = await _c.rpc(
+        'faltas_hoy',
+        params: {'p_empresa_id': empresa.id},
+      );
+      if (rows is! List) return [];
+      return rows
+          .map((r) => Empleado.fromRow(
+                Map<String, dynamic>.from(r as Map),
+                empresa,
+              ))
           .toList();
     } catch (e, s) {
       AppLogger.error('faltasHoy failed', e, s);
@@ -265,6 +204,7 @@ class SupabaseService {
       timestamp: ts,
       latitude: (r['lat'] as num?)?.toDouble(),
       longitude: (r['lng'] as num?)?.toDouble(),
+      distance: (r['distancia_metros'] as num?)?.toDouble(),
       biometricVerified: false,
       createdAt: ts,
     );
