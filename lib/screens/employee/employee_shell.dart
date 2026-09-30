@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/mock_data.dart';
 import '../../models/checada_model.dart';
 import '../../models/entities.dart';
+import '../../services/session_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/futuristic.dart';
@@ -124,7 +125,12 @@ class _EmployeeShellState extends State<EmployeeShell> {
         ),
         actions: [
           IconButton(
-            onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+            tooltip: 'Cerrar sesión',
+            onPressed: () async {
+              await SessionService.instance.clear();
+              if (!context.mounted) return;
+              Navigator.of(context).popUntil((r) => r.isFirst);
+            },
             icon: const Icon(Icons.logout_rounded, color: AppColors.pink),
           ),
         ],

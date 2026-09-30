@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -32,6 +33,9 @@ class _CheckInMapScreenState extends State<CheckInMapScreen> {
   // Default just inside the geofence so the map is meaningful without GPS.
   late LatLng _me = LatLng(_obraLat + 0.0006, _obraLng + 0.0004);
   bool _simulateOutside = false;
+  /// On web/headless agents GPS is often far from the obra; keep a safe
+  /// in-geofence anchor for demos while still allowing real GPS on devices.
+  bool _anchorToObra = kIsWeb;
   bool _locating = false;
 
   @override
@@ -45,9 +49,15 @@ class _CheckInMapScreenState extends State<CheckInMapScreen> {
 
   bool get _inside => _meters <= _radius;
 
-  LatLng get _currentMe => _simulateOutside
-      ? LatLng(_obraLat + 0.004, _obraLng + 0.004)
-      : _me;
+  LatLng get _nearObra => LatLng(_obraLat + 0.0006, _obraLng + 0.0004);
+
+  LatLng get _currentMe {
+    if (_simulateOutside) {
+      return LatLng(_obraLat + 0.004, _obraLng + 0.004);
+    }
+    if (_anchorToObra) return _nearObra;
+    return _me;
+  }
 
   Future<void> _tryGetLocation() async {
     setState(() => _locating = true);
@@ -183,8 +193,27 @@ class _CheckInMapScreenState extends State<CheckInMapScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.explore_rounded,
+                          const Icon(Icons.place_rounded,
                               color: AppColors.cyan, size: 20),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text('Anclar a la obra (pruebas)',
+                                style: TextStyle(color: AppColors.textMuted)),
+                          ),
+                          Switch(
+                            value: _anchorToObra,
+                            activeThumbColor: AppColors.cyan,
+                            onChanged: (v) => setState(() {
+                              _anchorToObra = v;
+                              if (v) _simulateOutside = false;
+                            }),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.explore_rounded,
+                              color: AppColors.pink, size: 20),
                           const SizedBox(width: 8),
                           const Expanded(
                             child: Text('Simular estar fuera del área',
@@ -192,9 +221,11 @@ class _CheckInMapScreenState extends State<CheckInMapScreen> {
                           ),
                           Switch(
                             value: _simulateOutside,
-                            activeColor: AppColors.pink,
-                            onChanged: (v) =>
-                                setState(() => _simulateOutside = v),
+                            activeThumbColor: AppColors.pink,
+                            onChanged: (v) => setState(() {
+                              _simulateOutside = v;
+                              if (v) _anchorToObra = false;
+                            }),
                           ),
                         ],
                       ),

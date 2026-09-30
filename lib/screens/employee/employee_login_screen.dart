@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../models/entities.dart';
+import '../../services/session_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/futuristic.dart';
@@ -29,29 +29,37 @@ class _EmployeeLoginScreenState extends State<EmployeeLoginScreen> {
   }
 
   Future<void> _login() async {
+    final empresa = _empresa.text.trim();
+    final codigo = _empleado.text.trim();
+    final pin = _pin.text.trim();
+    if (empresa.isEmpty || codigo.isEmpty || pin.isEmpty) {
+      _error('Completa empresa, código y PIN.');
+      return;
+    }
+
     setState(() => _loading = true);
     try {
       if (SupabaseService.instance.isConnected) {
         final empleado = await SupabaseService.instance.loginEmpleado(
-          empresaCodigo: _empresa.text.trim(),
-          empleadoCodigo: _empleado.text.trim(),
-          pin: _pin.text.trim(),
+          empresaCodigo: empresa,
+          empleadoCodigo: codigo,
+          pin: pin,
         );
         if (!mounted) return;
         if (empleado == null) {
-          // Either wrong credentials or RLS is blocking anon reads.
-          _info('Sin acceso a datos (revisa credenciales/RLS). Modo demo.');
-          Navigator.of(context).push(fadeRoute(const EmployeeShell()));
-        } else {
-          final obra = await SupabaseService.instance
-              .obraForEmpleado(empleado.id, empleado.empresa.id);
-          if (!mounted) return;
-          Navigator.of(context).push(
-              fadeRoute(EmployeeShell(empleado: empleado, obra: obra)));
+          _error('Credenciales incorrectas.');
+          return;
         }
+        await SessionService.instance.saveEmployee(empleado);
+        final obra = await SupabaseService.instance
+            .obraForEmpleado(empleado.id, empleado.empresa.id);
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          fadeRoute(EmployeeShell(empleado: empleado, obra: obra)),
+        );
       } else {
-        // Offline/demo mode.
-        Navigator.of(context).push(fadeRoute(const EmployeeShell()));
+        _info('Modo demo local (sin Supabase).');
+        Navigator.of(context).pushReplacement(fadeRoute(const EmployeeShell()));
       }
     } catch (e) {
       _error('No se pudo conectar. Intenta de nuevo.');

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../services/session_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/futuristic.dart';
@@ -15,8 +16,8 @@ class AdminLoginScreen extends StatefulWidget {
 
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _empresa = TextEditingController(text: 'INST01');
-  final _usuario = TextEditingController(text: 'martinez');
-  final _pin = TextEditingController(text: '1987');
+  final _usuario = TextEditingController(text: 'admin');
+  final _pin = TextEditingController(text: '1212');
   bool _loading = false;
 
   @override
@@ -28,23 +29,34 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   }
 
   Future<void> _login() async {
+    final empresa = _empresa.text.trim();
+    final usuario = _usuario.text.trim();
+    final pin = _pin.text.trim();
+    if (empresa.isEmpty || usuario.isEmpty || pin.isEmpty) {
+      _error('Completa empresa, usuario y PIN.');
+      return;
+    }
+
     setState(() => _loading = true);
     try {
       if (SupabaseService.instance.isConnected) {
         final admin = await SupabaseService.instance.loginAdmin(
-          empresaCodigo: _empresa.text.trim(),
-          usuario: _usuario.text.trim(),
-          pin: _pin.text.trim(),
+          empresaCodigo: empresa,
+          usuario: usuario,
+          pin: pin,
         );
         if (!mounted) return;
         if (admin == null) {
-          _info('Sin acceso a datos (revisa credenciales/RLS). Modo demo.');
-          Navigator.of(context).push(fadeRoute(const AdminShell()));
-        } else {
-          Navigator.of(context).push(fadeRoute(AdminShell(session: admin)));
+          _error('Credenciales incorrectas.');
+          return;
         }
+        await SessionService.instance.saveAdmin(admin);
+        if (!mounted) return;
+        Navigator.of(context)
+            .pushReplacement(fadeRoute(AdminShell(session: admin)));
       } else {
-        Navigator.of(context).push(fadeRoute(const AdminShell()));
+        _info('Modo demo local (sin Supabase).');
+        Navigator.of(context).pushReplacement(fadeRoute(const AdminShell()));
       }
     } catch (e) {
       _error('No se pudo conectar. Intenta de nuevo.');

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/mock_data.dart';
 import '../../models/entities.dart';
+import '../../services/session_service.dart';
 import '../../services/supabase_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/futuristic.dart';
@@ -474,7 +475,11 @@ class _AdminDrawer extends StatelessWidget {
               leading: const Icon(Icons.logout_rounded, color: AppColors.pink),
               title: const Text('Cerrar sesión',
                   style: TextStyle(color: AppColors.pink)),
-              onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
+              onTap: () async {
+                await SessionService.instance.clear();
+                if (!context.mounted) return;
+                Navigator.of(context).popUntil((r) => r.isFirst);
+              },
             ),
           ],
         ),

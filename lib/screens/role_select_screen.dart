@@ -57,7 +57,7 @@ class RoleSelectScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 34),
-                    Text('v2.0 · edición futurista',
+                    Text('v2.0 · producción',
                         style: TextStyle(
                             color: AppColors.textMuted.withOpacity(0.6),
                             fontSize: 12,

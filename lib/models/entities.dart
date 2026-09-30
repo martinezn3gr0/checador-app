@@ -1,4 +1,5 @@
 /// Lightweight domain models mapped to the real Supabase schema.
+library;
 
 class Empresa {
   final String id;
