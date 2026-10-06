@@ -24,13 +24,30 @@ class SupabaseService {
     try {
       await Supabase.initialize(
         url: AppConfig.supabaseUrl,
-        // Legacy anon JWT still accepted; prefer publishable when available.
-        anonKey: AppConfig.supabaseAnonKey,
+        // Legacy anon JWT is a valid publishable client key for this SDK.
+        publishableKey: AppConfig.supabaseAnonKey,
       );
       instance._ready = true;
-      AppLogger.info('Supabase initialized.');
+      final project = AppConfig.isCanonicalProject
+          ? AppConfig.projectName
+          : AppConfig.supabaseUrl;
+      AppLogger.info('Supabase initialized ($project).');
+      await instance._ping();
     } catch (e, s) {
       AppLogger.error('Supabase init failed', e, s);
+    }
+  }
+
+  /// Lightweight connectivity check (nil UUIDs → null, no side effects).
+  Future<void> _ping() async {
+    try {
+      await _c.rpc('obra_for_empleado', params: {
+        'p_empleado_id': '00000000-0000-0000-0000-000000000000',
+        'p_empresa_id': '00000000-0000-0000-0000-000000000000',
+      });
+      AppLogger.info('Supabase RPC reachability OK.');
+    } catch (e, s) {
+      AppLogger.error('Supabase RPC ping failed', e, s);
     }
   }
 
