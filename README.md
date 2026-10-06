@@ -23,13 +23,17 @@ Permitir que empleados registren **entrada/salida** con geocerca en la obra, y q
 
 ## Configurar Supabase
 
+Proyecto canónico: **`checador-express`** (`https://welyvwhjtwsvzyobewzx.supabase.co`).
+
+La app ya incluye defaults para ese proyecto. Opcionalmente puedes sobreescribir:
+
 ```bash
 flutter run -d web-server --web-port=8080 --web-hostname=0.0.0.0 \
-  --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co \
+  --dart-define=SUPABASE_URL=https://welyvwhjtwsvzyobewzx.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY
 ```
 
-Sin defines, la app corre en **modo demo local**.
+Si `SUPABASE_URL` del entorno apunta a otro proyecto, se ignora y se usan los defaults.
 
 Migraciones: `supabase/migrations/`.
 

@@ -10,7 +10,9 @@ Core models: `lib/models/checada_model.dart`, `lib/models/entities.dart`.
 - Flutter **stable** (3.47.x) is installed at `~/flutter` and is on `PATH` via `~/.bashrc` (also exports `CHROME_EXECUTABLE`). It is baked into the VM snapshot — do NOT reinstall Flutter. The startup update script only runs `flutter pub get`.
 - Linux desktop build deps (`ninja-build`, `libgtk-3-dev`, `mesa-utils`, `clang`, `cmake`, `pkg-config`) are installed, so `flutter build linux` works. Web is enabled (`flutter config --enable-web`).
 - Android SDK is intentionally NOT installed (Android is optional here); `flutter doctor` will flag it — that is expected, not a problem.
-- Secrets: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (project `checador-express`). Pass them as `--dart-define` for web, or rely on process env for VM/native.
+- Canonical Supabase project: **`checador-express`** (`welyvwhjtwsvzyobewzx`, region `us-east-1`).
+- Secrets: `SUPABASE_URL` / `SUPABASE_ANON_KEY` must point at that project. Stale secrets for other refs are ignored; the app falls back to built-in defaults for `checador-express`.
+- Pass credentials as `--dart-define` for web, or rely on process env for VM/native.
 
 ### Commands (run from repo root)
 - Install deps: `flutter pub get`
