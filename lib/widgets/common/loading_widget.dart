@@ -6,10 +6,10 @@ class LoadingWidget extends StatelessWidget {
   final bool useShimmer;
   
   const LoadingWidget({
-    Key? key,
+    super.key,
     this.message,
     this.useShimmer = false,
-  }) : super(key: key);
+  });
   
   @override
   Widget build(BuildContext context) {
